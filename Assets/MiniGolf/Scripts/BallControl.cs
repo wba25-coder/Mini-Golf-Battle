@@ -19,17 +19,18 @@ public class BallControl : MonoBehaviour
     [SerializeField] private Color midColor = Color.yellow;
     [SerializeField] private Color endColor = Color.red;
 
-
     private MaterialPropertyBlock propertyBlock;
+    private Camera mainCamera;
 
     private float force;                                    //actuale force which is applied to the ball
     private Rigidbody rgBody;                               //reference to rigidbody attached to this gameobject
     /// <summary>
     /// The below variables are used to decide the force to be applied to the ball
     /// </summary>
-    private Vector3 startPos, endPos;
-    private bool canShoot = false, ballIsStatic = true;    //bool to make shooting stopping ball easy
+    public Vector3 startPos, endPos;
+    public bool canShoot = false, ballIsStatic = true;    //bool to make shooting stopping ball easy
     private Vector3 direction;                              //direction in which the ball will be shot
+    public bool cameraIsMoving = false;
 
     private void Awake()
     {
@@ -49,6 +50,8 @@ public class BallControl : MonoBehaviour
     void Start()
     {
         GameObject UIAreaAffector = GameObject.FindWithTag("AreaAffector");
+        mainCamera = GameObject.FindWithTag("MainCamera").GetComponent<Camera>();
+
         if (UIAreaAffector != null)
         {
             areaAffector = UIAreaAffector;
@@ -113,11 +116,21 @@ public class BallControl : MonoBehaviour
 
         endPos = ClickedPoint();                                             //get the vector in word space
         float distance = Vector3.Distance(endPos, startPos); // Calcular a distância entre startPos e endPos
+        Vector3 direction = (endPos - startPos).normalized;  // Normaliza a direção
         if (distance > MaxLineRange)
         {
-            Vector3 direction = (endPos - startPos).normalized;  // Normaliza a direção
             endPos = startPos + direction * MaxLineRange;     // Ajusta o endPos para o limite máximo
             distance = MaxLineRange;                          // Atualiza a distância para o limite
+
+        }
+
+        if (Mathf.Abs(Vector3.Dot(direction.normalized, Vector3.forward)) > 0.15f)
+        {
+            cameraIsMoving = true;
+        }
+        else
+        {
+            cameraIsMoving = false;
         }
 
         force = Mathf.Clamp(distance * forceModifier, 0, MaxForce);   //calculate the force

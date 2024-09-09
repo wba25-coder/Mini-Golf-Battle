@@ -38,6 +38,7 @@ public class LevelManager : MonoBehaviour
                                                                    //then we Instantiate the ball at spawn position
         GameObject ball = Instantiate(ballPrefab, ballSpawnPos, Quaternion.identity);
         CameraFollow.instance.SetTarget(ball);                      //set the camera target
+        CameraControl.instance.SetTarget(ball);                     //set the camera target
         GameManager.singleton.gameStatus = GameStatus.Playing;      //set the game status to playing
     }
 

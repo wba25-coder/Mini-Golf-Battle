@@ -20,6 +20,9 @@ public class CircleFollow : MonoBehaviour
         {
             Debug.LogError("Nenhuma bola foi encontrada na cena com a tag 'Ball'");
         }
+        
+        // Inicia a rotação do círculo
+        StartCoroutine(RotateCircle());
     }
 
     void Update()
@@ -29,5 +32,15 @@ public class CircleFollow : MonoBehaviour
         
         // Atualiza a posição da imagem no Canvas
         circleRectTransform.position = screenPos;
+    }
+
+    IEnumerator RotateCircle()
+    {
+        while (true)
+        {
+            // Gira o círculo no sentido horário lentamente
+            circleRectTransform.Rotate(0, 0, -20 * Time.deltaTime);
+            yield return null;  // Espera até o próximo frame
+        }
     }
 }

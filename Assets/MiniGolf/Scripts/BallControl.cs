@@ -11,8 +11,16 @@ public class BallControl : MonoBehaviour
     [SerializeField] private LineRenderer lineRenderer;     //reference to lineRenderer child object
     [SerializeField] private float MaxForce;                //maximum force that an be applied to ball
     [SerializeField] private float forceModifier = 0.5f;    //multipliers of force
-    [SerializeField] private GameObject areaAffector;       //reference to sprite object which show area around ball to click
+    private GameObject areaAffector;       //reference to sprite object which show area around ball to click
     [SerializeField] private LayerMask rayLayer;            //layer allowed to be detected by ray
+    [SerializeField] private float MaxLineRange = 2.6f;
+
+    [SerializeField] private Color startColor = Color.green;
+    [SerializeField] private Color midColor = Color.yellow;
+    [SerializeField] private Color endColor = Color.red;
+
+
+    private MaterialPropertyBlock propertyBlock;
 
     private float force;                                    //actuale force which is applied to the ball
     private Rigidbody rgBody;                               //reference to rigidbody attached to this gameobject
@@ -35,6 +43,20 @@ public class BallControl : MonoBehaviour
         }
 
         rgBody = GetComponent<Rigidbody>();                 //get reference to the rigidbody
+        propertyBlock = new MaterialPropertyBlock();
+    }
+
+    void Start()
+    {
+        GameObject UIAreaAffector = GameObject.FindWithTag("AreaAffector");
+        if (UIAreaAffector != null)
+        {
+            areaAffector = UIAreaAffector;
+        }
+        else
+        {
+            Debug.LogError("Nenhum game obj foi encontrada na cena com a tag 'AreaAffector'");
+        }
     }
 
     // Update is called once per frame
@@ -88,9 +110,34 @@ public class BallControl : MonoBehaviour
     public void MouseNormalMethod()                                         //method called by InputManager
     {
         if(!ballIsStatic) return;                                           //no mouse detection if ball is moving
-        endPos = ClickedPoint();                                                //get the vector in word space
-        force = Mathf.Clamp(Vector3.Distance(endPos, startPos) * forceModifier, 0, MaxForce);   //calculate the force
+
+        endPos = ClickedPoint();                                             //get the vector in word space
+        float distance = Vector3.Distance(endPos, startPos); // Calcular a distância entre startPos e endPos
+        if (distance > MaxLineRange)
+        {
+            Vector3 direction = (endPos - startPos).normalized;  // Normaliza a direção
+            endPos = startPos + direction * MaxLineRange;     // Ajusta o endPos para o limite máximo
+            distance = MaxLineRange;                          // Atualiza a distância para o limite
+        }
+
+        force = Mathf.Clamp(distance * forceModifier, 0, MaxForce);   //calculate the force
         UIManager.instance.PowerBar.fillAmount = force / MaxForce;              //set the powerBar image fill amount
+        
+        // Interpolação de cor baseada na distância atual
+        Color currentColor;
+        if (distance < MaxLineRange / 2)
+        {
+            currentColor = Color.Lerp(startColor, midColor, distance / (MaxLineRange / 2));
+        }
+        else
+        {
+            currentColor = Color.Lerp(midColor, endColor, (distance - MaxLineRange / 2) / (MaxLineRange / 2));
+        }
+
+        // Aplica a cor ao material usando MaterialPropertyBlock
+        propertyBlock.SetColor("_Color", currentColor);
+        lineRenderer.GetComponent<Renderer>().SetPropertyBlock(propertyBlock);
+
         //we convert the endPos to local pos for ball as lineRenderer is child of ball
         lineRenderer.SetPosition(1, transform.InverseTransformPoint(endPos));   //set its 1st position
     }
